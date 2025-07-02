@@ -11,3 +11,13 @@ exports.kirimPesan = async (req, res) => {
     res.status(500).json({ message: 'Gagal menyimpan pesan' });
   }
 };
+
+exports.getAllPesan = async (req, res) => {
+  try {
+    const pesanList = await Pesan.find().sort({ createdAt: -1 }); // urutkan terbaru dulu
+    res.status(200).json(pesanList);
+  } catch (error) {
+    console.error('Gagal mengambil data pesan:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat mengambil pesan.' });
+  }
+};

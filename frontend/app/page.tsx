@@ -9,6 +9,7 @@ import Image from "next/image";
 export default function Home() {
   const [berita, setBerita] = useState<any[]>([]);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [galeri, setGaleri] = useState<any[]>([]);
 
   // Data untuk FAQ
   const faq = [
@@ -39,18 +40,32 @@ export default function Home() {
     setOpenFaq(openFaq === index ? null : index);
   };
 
+    // Fetch data galeri
+  useEffect(() => {
+    const fetchGaleri = async () => {
+      try {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/galeri`);
+        setGaleri(response.data);
+      } catch (error) {
+        console.error("Error fetching galeri:", error);
+      }
+    };
+
+    fetchGaleri();
+  }, []);
+
   // Fetch data berita
   useEffect(() => {
-    const fetchBerita = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/berita/public"); // Ganti dengan endpoint yang sesuai
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/berita/public`); // Ganti dengan endpoint yang sesuai
         setBerita(response.data); // Simpan data berita ke state
       } catch (error) {
         console.error("Error fetching berita:", error);
       }
     };
 
-    fetchBerita();
+    fetchData();
   }, []);
 
   return (
@@ -81,54 +96,77 @@ export default function Home() {
       </div>
 
       {/* Berita */}
-      <div className="min-h-screen w-full text-[#0725ac] mt-20">
-        <h1 className="text-center text-4xl font-bold mt-10">Berita</h1>
+<div className="w-full bg-white text-[#0725ac] py-20">
+  <div className="container mx-auto px-6">
+    <div className="text-center mb-12">
+      <h1 className="text-4xl font-bold text-gray-800">Berita & Informasi Terkini</h1>
+      <p className="text-lg text-gray-600 mt-2">Ikuti perkembangan terbaru dari Jamkrindo Madiun.</p>
+    </div>
 
-        {/* Wrapper agar grid berada di tengah */}
-        <div className="flex justify-center pt-10">
-          <div className="grid grid-cols-2 gap-8">
-            {berita.map((item) => (
-              <Link key={item._id} href={`/berita/${item._id}`}>
-                <div className="flex w-[500px] h-[300px] bg-white overflow-hidden cursor-pointer hover:shadow-xl transition-shadow duration-300">
+    {/* Grid untuk daftar berita */}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {berita.map((item) => (
+        // Gunakan 'group' untuk efek hover pada elemen anak
+        <Link key={item._id} href={`/berita/${item._id}`} className="group block">
+          <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 h-full flex flex-col">
+            
+            {/* Bagian Gambar */}
+            <div className="relative w-full h-56">
+              <Image
+                // Gunakan Next.js Image untuk optimasi
+                src={`http://localhost:5000${item.image}`}
+                alt={item.title}
+                layout="fill"
+                objectFit="cover"
+              />
+            </div>
 
-                  <div className="w-1/2 h-full">
-                    <img
-                      src={`http://localhost:5000${item.image}`}
-                      alt={item.title}
-                      className="w-full h-full object-cover" // object-cover memastikan gambar mengisi area tanpa distorsi
-                    />
-                  </div>
+            {/* Bagian Konten Teks */}
+            <div className="p-6 flex flex-col flex-grow">
+              <h2 className="text-2xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors duration-300">
+                {item.title}
+              </h2>
+              <p className="mt-3 text-gray-600 text-base line-clamp-3 flex-grow">
+                {/* 'line-clamp-3' akan memotong deskripsi setelah 3 baris */}
+                {item.description}
+              </p>
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <span className="font-semibold text-blue-600">
+                  Baca Selengkapnya &rarr;
+                </span>
+              </div>
+            </div>
 
-                  <div className="w-1/2 p-6 flex flex-col justify-start">
-                    <h2 className="font-bold text-2xl text-gray-800">{item.title}</h2>
-                    <h2 className="font-bold text-sm text-black">{item.description}</h2>
-                  </div>
-                </div>
-              </Link>
-            ))}
           </div>
-        </div>
-      </div>
+        </Link>
+      ))}
+    </div>
+  </div>
+</div>
 
       {/* Galeri */}
-      <div className="min-h-screen w-full text-[#0725ac] mt-20">
-        <h1 className="text-center text-4xl font-bold mt-10">Galeri</h1>
+<div className="min-h-screen w-full text-[#0725ac] mt-20">
+  <h1 className="text-center text-4xl font-bold mt-10">Galeri</h1>
 
-        {/* Wrapper agar grid berada di tengah */}
-        <div className="flex justify-center pt-10">
-          <div className="grid grid-cols-2 gap-8">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="relative w-[500px] h-[300px] bg-cover bg-center text-white"
-                style={{ backgroundImage: "url('/images/jamkrindo-1.webp')" }}
-              >
-                <div className="absolute inset-0 bg-black/60" />
-              </div>
-            ))}
+  {/* Wrapper agar grid berada di tengah */}
+  <div className="flex justify-center pt-10">
+    <div className="grid grid-cols-2 gap-8">
+      {galeri.map((item) => (
+        <div
+          key={item._id}
+          className="relative w-[500px] h-[300px] bg-cover bg-center text-white"
+          style={{ backgroundImage: `url('http://localhost:5000${item.imageUrl}')` }}
+        >
+          <div className="absolute inset-0 bg-black/60" />
+          <div className="absolute bottom-0 p-4 z-10">
+            <h3 className="text-xl font-semibold">{item.title}</h3>
           </div>
         </div>
-      </div>
+      ))}
+    </div>
+  </div>
+</div>
+
 
       {/* FAQ */}
       <div className="w-full text-[#0725ac] mt-20 py-20 px-[5vw]">
@@ -167,7 +205,6 @@ export default function Home() {
       </div>
 
       <CallCenter />
-      <Footer />
     </div>
   );
 }

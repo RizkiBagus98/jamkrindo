@@ -19,44 +19,36 @@ const Login = () => {
   };
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+  e.preventDefault();
+  setIsLoading(true);
+  setError(null);
 
-    try {
-      // Mengirim data ke API Route Next.js, bukan backend langsung
-      const res = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(form),
-      });
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(form),
+    });
 
-      // Mengambil data respons
-      const data = await res.json();
+    const data = await res.json();
 
-      if (!res.ok) {
-        // Jika respons tidak OK (misal: status 401, 500), lempar error
-        throw new Error(data.message || 'Terjadi kesalahan');
-      }
-
-      const { token } = data;
-      if (token) {
-        document.cookie = `session-token=${token}; path=/; max-age=25200`
-        alert('Login berhasil!');
-        router.push('/dashboard');
-      } else {
-        throw new Error('Token tidak diterima dari server')
-      }
-      
-    } catch (err: any) {
-      setError(err.message);
-      alert(err.message); // Menampilkan pesan error
-    } finally {
-      setIsLoading(false);
+    if (!res.ok) {
+      // Server akan mengirim pesan error jika login gagal
+      throw new Error(data.message || 'Terjadi kesalahan');
     }
-  };
+
+    alert('Login berhasil!');
+    router.push('/dashboard/berita');
+    
+  } catch (err: any) {
+    setError(err.message);
+    alert(err.message);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className='bg-white w-full min-h-screen flex p-6 justify-between overflow-y-hidden'>
@@ -82,13 +74,7 @@ const Login = () => {
           className="mb-4 p-4 w-full border border-gray-300 rounded-xl text-sm"
         />
         <div className='flex flex-col'>
-          <div className='flex justify-between'>
-            <div className='flex'>
-              <input type='checkbox' name='rememberMe'/>
-              <label htmlFor="rememberMe" className='text-sm ml-2'>Ingat Saya</label>
-            </div>
-            <p className='text-sm'>Lupa Password?</p>
-          </div>
+          
           <button 
             type="submit" 
             disabled={isLoading}

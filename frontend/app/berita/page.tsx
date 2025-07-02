@@ -11,7 +11,7 @@ const BeritaPage = () => {
   useEffect(() => {
     const fetchBerita = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/berita/public"); // Ambil data berita publik
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/berita/public`); // Ambil data berita publik
         setBerita(response.data); // Simpan data berita ke state
       } catch (error) {
         console.error("Error fetching berita:", error);
