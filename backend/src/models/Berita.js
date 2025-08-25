@@ -2,19 +2,19 @@ const mongoose = require('mongoose');
 
 const beritaSchema = new mongoose.Schema({
     title: {
-      type: String,
-      required: true,
+        type: String,
+        required: true,
     },
     description: {
-      type: String,
-      required: true,
+        type: String,
+        required: true,
     },
     image: {
-      type: String,
+        type: String,
     },
     createdAt: {
-      type: Date,
-      default: Date.now, // Otomatis mengisi dengan waktu sekarang saat berita dibuat
+        type: Date,
+        default: Date.now, // Otomatis mengisi dengan waktu sekarang saat berita dibuat
     },
 });
 

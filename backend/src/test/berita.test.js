@@ -12,226 +12,233 @@ jest.mock('path');
 jest.mock('../models/Berita');
 
 describe('Berita Controller', () => {
-  let req, res;
+    let req, res;
 
-  beforeEach(() => {
-    req = {
-      body: {},
-      file: null,
-      params: {}
-    };
-    res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
-    };
+    beforeEach(() => {
+        req = {
+            body: {},
+            file: null,
+            params: {}
+        };
+        res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
 
-    // Clear mock history
-    jest.clearAllMocks();
-  });
-
-  describe('createBerita', () => {
-    it('should create berita successfully', async () => {
-      req.body = { title: 'judul', description: 'desc', createdAt: '2025-05-28' };
-      req.file = { filename: 'image.png' };
-
-      const savedBerita = { _id: '123', title: 'judul', description: 'desc', createdAt: '2025-05-28', image: '/images/image.png', save: jest.fn() };
-
-      // Mock constructor and save
-      Berita.mockImplementation(() => savedBerita);
-      savedBerita.save = jest.fn().mockResolvedValue(savedBerita);
-
-      await beritaController.createBerita(req, res);
-
-      expect(Berita).toHaveBeenCalledWith({
-        title: 'judul',
-        description: 'desc',
-        createdAt: '2025-05-28',
-        image: '/images/image.png',
-      });
-      expect(savedBerita.save).toHaveBeenCalled();
-      expect(res.status).toHaveBeenCalledWith(201);
-      expect(res.json).toHaveBeenCalledWith(savedBerita);
+        // Clear mock history
+        jest.clearAllMocks();
     });
 
-    it('should handle error during create', async () => {
-      req.body = { title: 'judul' };
-      Berita.mockImplementation(() => ({
-        save: jest.fn().mockRejectedValue(new Error('fail save')),
-      }));
+    describe('createBerita', () => {
+        it('should create berita successfully', async () => {
+            req.body = {title: 'judul', description: 'desc', createdAt: '2025-05-28'};
+            req.file = {filename: 'image.png'};
 
-      await beritaController.createBerita(req, res);
+            const savedBerita = {
+                _id: '123',
+                title: 'judul',
+                description: 'desc',
+                createdAt: '2025-05-28',
+                image: '/images/image.png',
+                save: jest.fn()
+            };
 
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: 'fail save' }));
-    });
-  });
+            // Mock constructor and save
+            Berita.mockImplementation(() => savedBerita);
+            savedBerita.save = jest.fn().mockResolvedValue(savedBerita);
 
-  describe('getAllBerita', () => {
-    it('should return all berita', async () => {
-      const fakeBerita = [{ title: 't1' }, { title: 't2' }];
-      Berita.find.mockResolvedValue(fakeBerita);
+            await beritaController.createBerita(req, res);
 
-      await beritaController.getAllBerita(req, res);
+            expect(Berita).toHaveBeenCalledWith({
+                title: 'judul',
+                description: 'desc',
+                createdAt: '2025-05-28',
+                image: '/images/image.png',
+            });
+            expect(savedBerita.save).toHaveBeenCalled();
+            expect(res.status).toHaveBeenCalledWith(201);
+            expect(res.json).toHaveBeenCalledWith(savedBerita);
+        });
 
-      expect(Berita.find).toHaveBeenCalled();
-      expect(res.json).toHaveBeenCalledWith(fakeBerita);
-    });
+        it('should handle error during create', async () => {
+            req.body = {title: 'judul'};
+            Berita.mockImplementation(() => ({
+                save: jest.fn().mockRejectedValue(new Error('fail save')),
+            }));
 
-    it('should handle error on find', async () => {
-      Berita.find.mockRejectedValue(new Error('fail find'));
+            await beritaController.createBerita(req, res);
 
-      await beritaController.getAllBerita(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: 'fail find' }));
-    });
-  });
-
-  describe('updateBerita', () => {
-    it('should update berita with new image and delete old one', async () => {
-      req.params.id = '123';
-      req.body = { title: 'judul baru', description: 'desc baru', createdAt: '2025-05-28' };
-      req.file = { filename: 'newimage.png' };
-
-      const existingBerita = {
-        _id: '123',
-        title: 'judul lama',
-        description: 'desc lama',
-        createdAt: '2020-01-01',
-        image: '/images/oldimage.png',
-        save: jest.fn().mockResolvedValue(true),
-      };
-
-      Berita.findById.mockResolvedValue(existingBerita);
-      path.join.mockReturnValue('/mocked/path/oldimage.png');
-      fs.unlink.mockImplementation((path, cb) => cb(null));
-
-      await beritaController.updateBerita(req, res);
-
-      expect(Berita.findById).toHaveBeenCalledWith('123');
-      expect(fs.unlink).toHaveBeenCalledWith('/mocked/path/oldimage.png', expect.any(Function));
-      expect(existingBerita.title).toBe('judul baru');
-      expect(existingBerita.description).toBe('desc baru');
-      expect(existingBerita.createdAt).toBe('2025-05-28');
-      expect(existingBerita.image).toBe('/images/newimage.png');
-      expect(existingBerita.save).toHaveBeenCalled();
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith(existingBerita);
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({message: 'fail save'}));
+        });
     });
 
-    it('should return 404 if berita not found', async () => {
-      req.params.id = 'notfound';
-      Berita.findById.mockResolvedValue(null);
+    describe('getAllBerita', () => {
+        it('should return all berita', async () => {
+            const fakeBerita = [{title: 't1'}, {title: 't2'}];
+            Berita.find.mockResolvedValue(fakeBerita);
 
-      await beritaController.updateBerita(req, res);
+            await beritaController.getAllBerita(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Berita tidak ditemukan' });
+            expect(Berita.find).toHaveBeenCalled();
+            expect(res.json).toHaveBeenCalledWith(fakeBerita);
+        });
+
+        it('should handle error on find', async () => {
+            Berita.find.mockRejectedValue(new Error('fail find'));
+
+            await beritaController.getAllBerita(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({message: 'fail find'}));
+        });
     });
 
-    it('should handle error on update', async () => {
-      req.params.id = '123';
-      Berita.findById.mockRejectedValue(new Error('fail findById'));
+    describe('updateBerita', () => {
+        it('should update berita with new image and delete old one', async () => {
+            req.params.id = '123';
+            req.body = {title: 'judul baru', description: 'desc baru', createdAt: '2025-05-28'};
+            req.file = {filename: 'newimage.png'};
 
-      await beritaController.updateBerita(req, res);
+            const existingBerita = {
+                _id: '123',
+                title: 'judul lama',
+                description: 'desc lama',
+                createdAt: '2020-01-01',
+                image: '/images/oldimage.png',
+                save: jest.fn().mockResolvedValue(true),
+            };
 
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Gagal memperbarui berita' });
-    });
-  });
+            Berita.findById.mockResolvedValue(existingBerita);
+            path.join.mockReturnValue('/mocked/path/oldimage.png');
+            fs.unlink.mockImplementation((path, cb) => cb(null));
 
-  describe('deleteBerita', () => {
-    it('should delete berita and image', async () => {
-      req.params.id = '123';
-      const berita = {
-        _id: '123',
-        image: '/images/img.png',
-      };
-      Berita.findById.mockResolvedValue(berita);
-      path.join.mockReturnValue('/mocked/path/img.png');
-      fs.unlink.mockImplementation((path, cb) => cb(null));
-      Berita.findByIdAndDelete.mockResolvedValue(true);
+            await beritaController.updateBerita(req, res);
 
-      await beritaController.deleteBerita(req, res);
+            expect(Berita.findById).toHaveBeenCalledWith('123');
+            expect(fs.unlink).toHaveBeenCalledWith('/mocked/path/oldimage.png', expect.any(Function));
+            expect(existingBerita.title).toBe('judul baru');
+            expect(existingBerita.description).toBe('desc baru');
+            expect(existingBerita.createdAt).toBe('2025-05-28');
+            expect(existingBerita.image).toBe('/images/newimage.png');
+            expect(existingBerita.save).toHaveBeenCalled();
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith(existingBerita);
+        });
 
-      expect(Berita.findById).toHaveBeenCalledWith('123');
-      expect(fs.unlink).toHaveBeenCalledWith('/mocked/path/img.png', expect.any(Function));
-      expect(Berita.findByIdAndDelete).toHaveBeenCalledWith('123');
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Berita berhasil dihapus' });
-    });
+        it('should return 404 if berita not found', async () => {
+            req.params.id = 'notfound';
+            Berita.findById.mockResolvedValue(null);
 
-    it('should return 404 if berita not found', async () => {
-      req.params.id = 'notfound';
-      Berita.findById.mockResolvedValue(null);
+            await beritaController.updateBerita(req, res);
 
-      await beritaController.deleteBerita(req, res);
+            expect(res.status).toHaveBeenCalledWith(404);
+            expect(res.json).toHaveBeenCalledWith({message: 'Berita tidak ditemukan'});
+        });
 
-      expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Berita tidak ditemukan' });
-    });
+        it('should handle error on update', async () => {
+            req.params.id = '123';
+            Berita.findById.mockRejectedValue(new Error('fail findById'));
 
-    it('should handle error on delete', async () => {
-      req.params.id = '123';
-      Berita.findById.mockRejectedValue(new Error('fail findById'));
+            await beritaController.updateBerita(req, res);
 
-      await beritaController.deleteBerita(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Gagal menghapus berita' });
-    });
-  });
-
-  describe('getPublicBerita', () => {
-    it('should return berita', async () => {
-      const data = [{ title: 't1' }];
-      Berita.find.mockResolvedValue(data);
-
-      await beritaController.getPublicBerita(req, res);
-
-      expect(res.json).toHaveBeenCalledWith(data);
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({message: 'Gagal memperbarui berita'});
+        });
     });
 
-    it('should handle error', async () => {
-      Berita.find.mockRejectedValue(new Error('fail'));
+    describe('deleteBerita', () => {
+        it('should delete berita and image', async () => {
+            req.params.id = '123';
+            const berita = {
+                _id: '123',
+                image: '/images/img.png',
+            };
+            Berita.findById.mockResolvedValue(berita);
+            path.join.mockReturnValue('/mocked/path/img.png');
+            fs.unlink.mockImplementation((path, cb) => cb(null));
+            Berita.findByIdAndDelete.mockResolvedValue(true);
 
-      await beritaController.getPublicBerita(req, res);
+            await beritaController.deleteBerita(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Gagal mengambil berita publik' });
+            expect(Berita.findById).toHaveBeenCalledWith('123');
+            expect(fs.unlink).toHaveBeenCalledWith('/mocked/path/img.png', expect.any(Function));
+            expect(Berita.findByIdAndDelete).toHaveBeenCalledWith('123');
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith({message: 'Berita berhasil dihapus'});
+        });
+
+        it('should return 404 if berita not found', async () => {
+            req.params.id = 'notfound';
+            Berita.findById.mockResolvedValue(null);
+
+            await beritaController.deleteBerita(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(404);
+            expect(res.json).toHaveBeenCalledWith({message: 'Berita tidak ditemukan'});
+        });
+
+        it('should handle error on delete', async () => {
+            req.params.id = '123';
+            Berita.findById.mockRejectedValue(new Error('fail findById'));
+
+            await beritaController.deleteBerita(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({message: 'Gagal menghapus berita'});
+        });
     });
-  });
 
-  describe('getBeritaById', () => {
-    it('should return berita by id', async () => {
-      const data = { _id: '123', title: 'judul' };
-      req.params.id = '123';
-      Berita.findById.mockResolvedValue(data);
+    describe('getPublicBerita', () => {
+        it('should return berita', async () => {
+            const data = [{title: 't1'}];
+            Berita.find.mockResolvedValue(data);
 
-      await beritaController.getBeritaById(req, res);
+            await beritaController.getPublicBerita(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith(data);
+            expect(res.json).toHaveBeenCalledWith(data);
+        });
+
+        it('should handle error', async () => {
+            Berita.find.mockRejectedValue(new Error('fail'));
+
+            await beritaController.getPublicBerita(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({message: 'Gagal mengambil berita publik'});
+        });
     });
 
-    it('should return 404 if not found', async () => {
-      req.params.id = '404';
-      Berita.findById.mockResolvedValue(null);
+    describe('getBeritaById', () => {
+        it('should return berita by id', async () => {
+            const data = {_id: '123', title: 'judul'};
+            req.params.id = '123';
+            Berita.findById.mockResolvedValue(data);
 
-      await beritaController.getBeritaById(req, res);
+            await beritaController.getBeritaById(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Berita tidak ditemukan' });
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith(data);
+        });
+
+        it('should return 404 if not found', async () => {
+            req.params.id = '404';
+            Berita.findById.mockResolvedValue(null);
+
+            await beritaController.getBeritaById(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(404);
+            expect(res.json).toHaveBeenCalledWith({message: 'Berita tidak ditemukan'});
+        });
+
+        it('should handle error', async () => {
+            req.params.id = 'error';
+            Berita.findById.mockRejectedValue(new Error('fail'));
+
+            await beritaController.getBeritaById(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({message: 'Gagal mengambil detail berita'});
+        });
     });
-
-    it('should handle error', async () => {
-      req.params.id = 'error';
-      Berita.findById.mockRejectedValue(new Error('fail'));
-
-      await beritaController.getBeritaById(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Gagal mengambil detail berita' });
-    });
-  });
 });

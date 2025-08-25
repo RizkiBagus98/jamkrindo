@@ -1,11 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const {
-  getAllGallery,
-  getGalleryById,
-  createGallery,
-  updateGallery,
-  deleteGallery,
+    getAllGallery,
+    getGalleryById,
+    createGallery,
+    updateGallery,
+    deleteGallery,
 } = require("../controllers/galeriController");
 const upload = require("../middlewares/upload");
 

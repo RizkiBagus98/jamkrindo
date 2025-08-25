@@ -17,8 +17,8 @@ app.use(express.json());
 
 // Konfigurasi CORS
 const corsOptions = {
-  origin: 'http://localhost:3000',
-  credentials: true,
+    origin: 'http://localhost:3000',
+    credentials: true,
 };
 app.use(cors(corsOptions));
 app.use(cookieParser());
