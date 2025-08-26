@@ -6,15 +6,15 @@ import Footer from "./Footer";
 
 export default function ClientLayout({children}: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const hideNavbarRoutes = ['/dashboard', '/login', '/register', '/dashboard/berita', '/dashboard/pesan', '/dashboard/galeri'];
+    const hideLayoutRoutes = ['/dashboard', '/login', '/register', '/dashboard/berita', '/dashboard/pesan', '/dashboard/galeri'];
 
-    const shouldHideNavbar = hideNavbarRoutes.includes(pathname);
+    const shouldHideLayout = hideLayoutRoutes.includes(pathname);
 
     return (
         <>
-            {!shouldHideNavbar && <Navbar/>}
+            {!shouldHideLayout && <Navbar/>}
             {children}
-            <Footer/>
+            {!shouldHideLayout && <Footer/>}
         </>
     );
 }

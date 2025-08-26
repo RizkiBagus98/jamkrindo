@@ -29,7 +29,7 @@ const AdminLayout: React.FC<LayoutProps> = ({children}) => {
     const pathname = usePathname();
 
     return (
-        <div className="flex h-screen bg-gray-100">
+        <div className="flex h-[80%] bg-gray-100">
             {/* Sidebar untuk Desktop */}
             <aside className="hidden md:flex md:flex-shrink-0">
                 <div className="flex w-64 flex-col bg-gray-800 text-white">
