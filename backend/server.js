@@ -16,8 +16,18 @@ const app = express();
 app.use(express.json());
 
 // Konfigurasi CORS
+const allowedOrigins = [
+    "http://localhost:3000",
+    "http://localhost:3001"
+];
 const corsOptions = {
-    origin: 'http://localhost:3000',
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
     credentials: true,
 };
 app.use(cors(corsOptions));
@@ -30,7 +40,7 @@ app.use('/images', express.static(path.join(__dirname, 'public/images')));
 app.use('/api/auth', authRoutes);
 app.use('/api/berita', beritaRoutes);
 app.use('/api/pesan', pesanRoutes);
-app.use('/api/galeri', galeriRoutes); // 👈 TAMBAHKAN INI
+app.use('/api/galeri', galeriRoutes);
 
 // Database Connect
 mongoose.connect(process.env.MONGO_URI)
