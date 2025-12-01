@@ -1,18 +1,18 @@
 "use client";
 
-import {useState, useEffect, ChangeEvent, FormEvent, ReactNode} from "react";
+import {useState, useEffect, FormEvent, ReactNode} from "react";
 import {PlusIcon, PencilIcon, TrashIcon, PhotoIcon} from "@heroicons/react/24/outline";
 
-// Definisikan tipe data untuk Berita
+// Interface (Sudah benar)
 interface Berita {
-    _id: string;
+    id: number;
     title: string;
     description: string;
     image: string;
     createdAt: string;
 }
 
-// Komponen Modal yang reusable
+// Modal (Tidak ada perubahan)
 const Modal = ({isOpen, onClose, title, children}: {
     isOpen: boolean;
     onClose: () => void;
@@ -20,7 +20,6 @@ const Modal = ({isOpen, onClose, title, children}: {
     children: ReactNode
 }) => {
     if (!isOpen) return null;
-
     return (
         <div className="fixed inset-0 bg-black/50 bg-opacity-50 z-50 flex justify-center items-center">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4">
@@ -36,26 +35,23 @@ const Modal = ({isOpen, onClose, title, children}: {
 
 
 const BeritaManagementPage = () => {
-    // State untuk data dan UI
+    // ... state (tidak ada perubahan) ...
     const [beritaList, setBeritaList] = useState<Berita[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitLoading, setSubmitLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
     const [currentBerita, setCurrentBerita] = useState<Berita | null>(null);
-
-    // State untuk form
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [image, setImage] = useState<File | null>(null);
 
-    // 1. Fungsi untuk mengambil semua data berita (READ)
+
+    // 1. Fungsi READ (Sudah benar, rute public tidak perlu credentials)
     const fetchBerita = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/berita`, {
-                credentials: "include",
-            });
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/berita/public`); 
             if (!res.ok) throw new Error("Gagal memuat data berita");
             const data = await res.json();
             setBeritaList(data);
@@ -71,7 +67,7 @@ const BeritaManagementPage = () => {
         fetchBerita();
     }, []);
 
-    // 2. Fungsi untuk menangani submit form (CREATE & UPDATE)
+    // 2. Fungsi CREATE & UPDATE
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         if (!title || !content || (modalMode === 'add' && !image)) {
@@ -89,15 +85,18 @@ const BeritaManagementPage = () => {
 
         const url = modalMode === 'add'
             ? `${process.env.NEXT_PUBLIC_API_URL}/berita`
-            : `${process.env.NEXT_PUBLIC_API_URL}/berita/${currentBerita?._id}`;
+            : `${process.env.NEXT_PUBLIC_API_URL}/berita/${currentBerita?.id}`;
+        
         const method = modalMode === 'add' ? "POST" : "PUT";
-
+        
+        // --- PERBAIKAN 1: Gunakan 'credentials: include' ---
         try {
             const res = await fetch(url, {
                 method,
-                credentials: 'include',
                 body: formData,
+                credentials: 'include', // <-- Mengirim cookie ke backend
             });
+            // --- Akhir Perbaikan 1 ---
 
             if (!res.ok) {
                 const errorData = await res.json();
@@ -106,7 +105,7 @@ const BeritaManagementPage = () => {
 
             alert(`Berita berhasil ${modalMode === 'add' ? 'disimpan' : 'diperbarui'}!`);
             closeModal();
-            fetchBerita(); // Muat ulang data untuk menampilkan perubahan
+            fetchBerita();
         } catch (err: any) {
             console.error(err);
             alert(err.message);
@@ -115,29 +114,30 @@ const BeritaManagementPage = () => {
         }
     };
 
-    // 3. Fungsi untuk menghapus berita (DELETE)
-    const handleDelete = async (id: string) => {
+    // 3. Fungsi DELETE
+    const handleDelete = async (id: number) => { 
         if (!confirm("Apakah Anda yakin ingin menghapus berita ini?")) return;
 
+        // --- PERBAIKAN 2: Gunakan 'credentials: include' ---
         try {
-            const token = localStorage.getItem("token");
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/berita/${id}`, {
                 method: "DELETE",
-                headers: {Authorization: `Bearer ${token}`}
+                credentials: 'include', // <-- Mengirim cookie ke backend
             });
+            // --- Akhir Perbaikan 2 ---
 
             if (!res.ok) throw new Error("Gagal menghapus berita.");
 
             alert("Berita berhasil dihapus.");
-            // Optimasi: Hapus item dari state tanpa fetch ulang
-            setBeritaList(beritaList.filter(item => item._id !== id));
+            setBeritaList(beritaList.filter(item => item.id !== id)); 
         } catch (err) {
             console.error(err);
             alert("Terjadi kesalahan saat menghapus berita.");
         }
     };
 
-    // Fungsi untuk membuka modal
+    // ... sisa komponen (openAddModal, openEditModal, closeModal, return) ...
+    // Tidak ada perubahan di bawah ini
     const openAddModal = () => {
         setModalMode('add');
         setCurrentBerita(null);
@@ -152,7 +152,7 @@ const BeritaManagementPage = () => {
         setCurrentBerita(berita);
         setTitle(berita.title);
         setContent(berita.description);
-        setImage(null); // Kosongkan field gambar, hanya diisi jika ingin diganti
+        setImage(null);
         setIsModalOpen(true);
     };
 
@@ -174,7 +174,6 @@ const BeritaManagementPage = () => {
                     </button>
                 </header>
 
-                {/* Tabel Data Berita */}
                 <div className="bg-white p-6 rounded-xl shadow-md">
                     <div className="overflow-x-auto">
                         <table className="w-full table-auto text-sm">
@@ -192,9 +191,9 @@ const BeritaManagementPage = () => {
                                     <td colSpan={4} className="text-center py-10">Memuat data...</td>
                                 </tr>
                             ) : beritaList.map((berita) => (
-                                <tr key={berita._id} className="border-b border-gray-200 hover:bg-gray-50">
+                                <tr key={berita.id} className="border-b border-gray-200 hover:bg-gray-50"> 
                                     <td className="p-3">
-                                        <img src={`http://localhost:5000${berita.image}`} alt={berita.title}
+                                        <img src={`http://localhost:5001${berita.image}`} alt={berita.title}
                                              className="w-24 h-16 object-cover rounded-md"/>
                                     </td>
                                     <td className="p-3 font-medium text-gray-800">{berita.title}</td>
@@ -206,7 +205,7 @@ const BeritaManagementPage = () => {
                                                     title="Edit">
                                                 <PencilIcon className="w-5 h-5"/>
                                             </button>
-                                            <button onClick={() => handleDelete(berita._id)}
+                                            <button onClick={() => handleDelete(berita.id)} 
                                                     className="p-2 rounded-full hover:bg-red-100 text-red-600"
                                                     title="Hapus">
                                                 <TrashIcon className="w-5 h-5"/>
@@ -227,7 +226,6 @@ const BeritaManagementPage = () => {
                 </div>
             </div>
 
-            {/* Modal Form */}
             <Modal isOpen={isModalOpen} onClose={closeModal}
                    title={modalMode === 'add' ? 'Tambah Berita Baru' : 'Edit Berita'}>
                 <form onSubmit={handleSubmit} className="space-y-6">

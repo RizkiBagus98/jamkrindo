@@ -1,94 +1,62 @@
 'use client'
-import {useState, ChangeEvent, FormEvent} from 'react';
-import {useRouter} from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
-interface FormState {
-    email: string;
-    password: string;
-}
-
-const Login = () => {
-    const [form, setForm] = useState<FormState>({email: '', password: ''});
-    const [error, setError] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState<boolean>(false);
+const LoginChoice = () => {
     const router = useRouter();
 
-    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-        setForm({...form, [e.target.name]: e.target.value});
-    };
-
-    const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setError(null);
-
-        try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(form),
-                credentials: "include"
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                // Server akan mengirim pesan error jika login gagal
-                throw new Error(data.message || 'Terjadi kesalahan');
-            }
-
-            alert('Login berhasil!');
-            router.push('/dashboard/berita');
-
-        } catch (err: any) {
-            setError(err.message);
-            alert(err.message);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
     return (
-        <div className='bg-white w-full min-h-screen flex p-6 justify-between overflow-y-hidden'>
-            <form onSubmit={handleSubmit} className="max-w-lg ml-20 translate-y-[6vw]">
-                <h1 className='text-4xl font-bold mb-10'>Halo, Selamat Datang Kembali</h1>
-                {error && <p className="text-red-500 mb-4">{error}</p>}
-                <input
-                    type="email"
-                    name="email"
-                    placeholder="Email"
-                    value={form.email}
-                    onChange={handleChange}
-                    required
-                    className="mb-4 p-4 w-full border border-gray-300 rounded-xl text-sm"
-                />
-                <input
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    value={form.password}
-                    onChange={handleChange}
-                    required
-                    className="mb-4 p-4 w-full border border-gray-300 rounded-xl text-sm"
-                />
-                <div className='flex flex-col'>
+        <div className='bg-white w-full min-h-screen flex p-6 justify-between items-center overflow-y-hidden'>
+            <div className='flex flex-col gap-8 ml-20'>
+                {/* Logo atau Judul */}
+                <div>
+                    <h1 className='text-5xl font-bold mb-4'>Jamkrindo Madiun</h1>
+                    <p className='text-gray-600 text-lg'>Pilih jenis akun untuk melanjutkan login</p>
+                </div>
 
+                {/* Tombol Login Pilihan */}
+                <div className='flex flex-col gap-6 max-w-md'>
+                    {/* Login Pengguna */}
                     <button
-                        type="submit"
-                        disabled={isLoading}
-                        className="mt-5 w-[10vw] cursor-pointer bg-blue-500 text-white py-2 px-10 rounded-lg hover:bg-blue-600 transition disabled:bg-gray-400"
+                        onClick={() => router.push('/login/client')}
+                        className='flex items-center gap-4 p-6 border-2 border-blue-500 rounded-xl hover:bg-blue-50 transition duration-300'
                     >
-                        {isLoading ? 'Loading...' : 'Login'}
+                        <div className='text-4xl'>👤</div>
+                        <div className='text-left'>
+                            <h2 className='text-xl font-bold text-blue-600'>Login Pengguna</h2>
+                            <p className='text-gray-600 text-sm'>Login sebagai pengguna biasa</p>
+                        </div>
+                    </button>
+
+                    {/* Login Admin */}
+                    <button
+                        onClick={() => router.push('/admin/login')}
+                        className='flex items-center gap-4 p-6 border-2 border-green-500 rounded-xl hover:bg-green-50 transition duration-300'
+                    >
+                        <div className='text-4xl'>🔐</div>
+                        <div className='text-left'>
+                            <h2 className='text-xl font-bold text-green-600'>Login Administrator</h2>
+                            <p className='text-gray-600 text-sm'>Login sebagai administrator</p>
+                        </div>
                     </button>
                 </div>
-            </form>
-            <Image src={'/images/jamkrindo-3.jpg'} className='rounded-xl ' alt={'images'} width={600}
-                   height={500}></Image>
+
+                {/* Link ke Home */}
+                <p className='text-sm text-gray-600'>
+                    Kembali ke <a href="/" className='text-blue-500 hover:underline font-semibold'>halaman utama</a>
+                </p>
+            </div>
+
+            {/* Gambar */}
+            <Image 
+                src={'/images/jamkrindo-3.jpg'} 
+                className='rounded-xl object-cover' 
+                alt={'Jamkrindo'} 
+                width={600}
+                height={500}
+            />
         </div>
     );
 };
 
-export default Login;
+export default LoginChoice;

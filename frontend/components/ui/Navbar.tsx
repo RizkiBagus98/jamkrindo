@@ -5,7 +5,9 @@ import Link from 'next/link'
 import {usePathname, useRouter} from 'next/navigation'
 import React, {useState, useEffect} from 'react'
 import {motion, AnimatePresence} from 'framer-motion'
-import {Menu, X, ChevronDown} from 'lucide-react'
+import {Menu, X, ChevronDown, LogIn, LogOut} from 'lucide-react'
+// --- Impor utilitas auth Anda ---
+import { getAuthStatus, logoutUser } from '@/app/utils/api'
 
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
 
@@ -20,38 +22,34 @@ const NavbarConfig = {
                 {title: 'Sejarah', href: '/profil/sejarah'},
                 {title: 'Visi Misi', href: '/profil/visi-misi'},
                 {title: 'Profil Karyawan', href: '/profil/karyawan'},
-                {title: 'Profil Manager', href: '/profil/profil-manager'},
-                {title: 'Struktur Organisasi', href: '/profil/struktur-organisasi'},
             ],
         },
         {
             title: 'Layanan',
             submenu: [
-                {title: 'Penjaminan Kredit Umum', href: '/layanan/penjaminan-kredit-umum'},
-                {title: 'Penjaminan Kredit Mikro', href: '/layanan/penjaminan-kredit-mikro'},
-                {title: 'Penjaminan Kredit Usaha Rakyat', href: '/layanan/penjaminan-kredit-usaha-rakyat'},
-                {title: 'Penjaminan KPR Bersubsidi', href: '/layanan/penjaminan-kpr-bersubsidi'},
-                {title: 'Costum Bond', href: '/layanan/costum-bond'},
                 {title: 'Surety Bond', href: '/layanan/surety-bond'},
-                {title: 'Penjaminan Supply Chain Financing', href: '/layanan/penjaminan-supply-chain-financing'},
-                {title: 'Penjaminan Sistem Resi Gudang', href: '/layanan/penjaminan-sistem-resi-gudang'},
-                {title: 'Penjaminan Pembiayaan Otomotif', href: '/layanan/penjaminan-pembiayaan-otomotif'},
             ],
         },
         {title: 'Berita', href: '/berita'},
-        {title: 'Pengumuman', href: '/pengumuman'},
     ]
 };
 
-// --- Type Definitions for Clarity ---
+// --- Type Definitions ---
 type NavItem = typeof NavbarConfig.navItems[0];
+// Definisikan tipe User sederhana
+interface User {
+    id: string;
+    name: string;
+    email: string;
+    role: 'ADMIN' | 'USER';
+}
 
 // --- Sub-component for Mobile Accordion Menu Item ---
 const MobileSubMenu = ({item, toggleMenu}: { item: NavItem, toggleMenu: () => void }) => {
+    // (Kode MobileSubMenu tidak berubah, sama seperti sebelumnya)
     const pathname = usePathname();
     const [isSubMenuOpen, setIsSubMenuOpen] = useState(false);
 
-    // Effect to auto-open the accordion if on a sub-page
     useEffect(() => {
         if (item.submenu?.some(subItem => pathname === subItem.href)) {
             setIsSubMenuOpen(true);
@@ -113,13 +111,50 @@ const Navbar = () => {
 
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    
+    // --- State untuk Autentikasi ---
+    const [user, setUser] = useState<User | null>(null);
+    const [authLoading, setAuthLoading] = useState(true);
+
+    // Cek status login saat komponen dimuat
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                const data = await getAuthStatus();
+                if (data && data.user) {
+                    setUser(data.user);
+                } else {
+                    setUser(null); // User belum login
+                }
+            } catch (error) {
+                // Error terjadi (network error, server error, dll)
+                // Tapi tidak akan log 401 untuk /auth/status (sudah ditangani di interceptor)
+                setUser(null);
+            } finally {
+                setAuthLoading(false);
+            }
+        };
+        checkAuth();
+    }, [pathname]); // Cek ulang saat navigasi (opsional, tapi bagus)
 
     useEffect(() => {
         if (isMenuOpen) setIsMenuOpen(false);
     }, [pathname]);
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-    const goToLogin = () => router.push('/login');
+    
+    // --- Fungsi Logout ---
+    const handleLogout = async () => {
+        if (isMenuOpen) toggleMenu(); // Tutup menu mobile
+        try {
+            await logoutUser();
+            setUser(null); // Update state lokal
+            router.push('/login'); // Arahkan ke halaman login
+        } catch (error) {
+            console.error("Gagal logout:", error);
+            // Anda bisa tambahkan notifikasi error di sini
+        }
+    };
 
     const dropdownVariants = {
         hidden: {opacity: 0, y: 10, scale: 0.98, transition: {duration: 0.2, ease: "easeInOut"}},
@@ -143,78 +178,94 @@ const Navbar = () => {
                         width={150}
                         height={50}
                         alt='Logo Perusahaan'
-                        src={'/images/logoJamkrindo.jpeg'} // Placeholder - update with your actual logo path
+                        src={'/images/logoJamkrindo.jpeg'}
                         className='cursor-pointer object-contain'
                         priority
                     />
                 </Link>
 
-                {/* Desktop Navigation */}
-                <nav className='hidden lg:flex items-center gap-x-2'>
-                    {NavbarConfig.navItems.map((item) => {
-                        const isParentActive = item.submenu?.some(sub => pathname.startsWith(sub.href));
-                        return (
-                            <div
-                                key={item.title}
-                                className='relative'
-                                onMouseEnter={() => item.submenu && setOpenDropdown(item.title)}
-                                onMouseLeave={() => item.submenu && setOpenDropdown(null)}
-                            >
-                                {item.submenu ? (
-                                    <button className={cn(
-                                        'px-4 py-2 flex items-center gap-1.5 text-sm font-medium hover:text-blue-600 transition-colors rounded-lg',
-                                        isParentActive ? 'text-blue-600' : 'text-gray-700'
-                                    )}>
-                                        {item.title}
-                                        <motion.div animate={{rotate: openDropdown === item.title ? 180 : 0}}>
-                                            <ChevronDown size={16}/>
-                                        </motion.div>
-                                    </button>
-                                ) : (
-                                    <Link href={item.href!} className={cn(
-                                        'px-4 py-2 block text-sm font-medium hover:text-blue-600 transition-colors rounded-lg',
-                                        pathname === item.href ? 'text-blue-600' : 'text-gray-700'
-                                    )}>
-                                        {item.title}
-                                    </Link>
-                                )}
-                                <AnimatePresence>
-                                    {item.submenu && openDropdown === item.title && (
-                                        <motion.div
-                                            initial="hidden"
-                                            animate="visible"
-                                            exit="hidden"
-                                            variants={dropdownVariants}
-                                            className='absolute top-full left-1/2 -translate-x-1/2 mt-2 w-56 bg-white/90 backdrop-blur-xl rounded-xl shadow-xl border border-gray-100'
-                                        >
-                                            <div className='py-2'>
-                                                {item.submenu.map((subItem) => (
-                                                    <Link
-                                                        key={subItem.title}
-                                                        href={subItem.href}
-                                                        className='block w-full text-left px-5 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium transition-colors duration-200'
-                                                        onClick={() => setOpenDropdown(null)}
-                                                    >
-                                                        {subItem.title}
-                                                    </Link>
-                                                ))}
-                                            </div>
-                                        </motion.div>
+                {/* Wrapper untuk Navigasi Desktop & Tombol Auth */}
+                <div className="hidden lg:flex items-center gap-x-6">
+                    {/* Desktop Navigation */}
+                    <nav className='flex items-center gap-x-2'>
+                        {NavbarConfig.navItems.map((item) => {
+                            const isParentActive = item.submenu?.some(sub => pathname.startsWith(sub.href));
+                            return (
+                                <div
+                                    key={item.title}
+                                    className='relative'
+                                    onMouseEnter={() => item.submenu && setOpenDropdown(item.title)}
+                                    onMouseLeave={() => item.submenu && setOpenDropdown(null)}
+                                >
+                                    {item.submenu ? (
+                                        <button className={cn(
+                                            'px-4 py-2 flex items-center gap-1.5 text-sm font-medium hover:text-blue-600 transition-colors rounded-lg',
+                                            isParentActive ? 'text-blue-600' : 'text-gray-700'
+                                        )}>
+                                            {item.title}
+                                            <motion.div animate={{rotate: openDropdown === item.title ? 180 : 0}}>
+                                                <ChevronDown size={16}/>
+                                            </motion.div>
+                                        </button>
+                                    ) : (
+                                        <Link href={item.href!} className={cn(
+                                            'px-4 py-2 block text-sm font-medium hover:text-blue-600 transition-colors rounded-lg',
+                                            pathname === item.href ? 'text-blue-600' : 'text-gray-700'
+                                        )}>
+                                            {item.title}
+                                        </Link>
                                     )}
-                                </AnimatePresence>
-                            </div>
-                        )
-                    })}
-                </nav>
+                                    <AnimatePresence>
+                                        {item.submenu && openDropdown === item.title && (
+                                            <motion.div
+                                                initial="hidden"
+                                                animate="visible"
+                                                exit="hidden"
+                                                variants={dropdownVariants}
+                                                className='absolute top-full left-1/2 -translate-x-1/2 mt-2 w-56 bg-white/90 backdrop-blur-xl rounded-xl shadow-xl border border-gray-100'
+                                            >
+                                                <div className='py-2'>
+                                                    {item.submenu.map((subItem) => (
+                                                        <Link
+                                                            key={subItem.title}
+                                                            href={subItem.href}
+                                                            className='block w-full text-left px-5 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium transition-colors duration-200'
+                                                            onClick={() => setOpenDropdown(null)}
+                                                        >
+                                                            {subItem.title}
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            )
+                        })}
+                    </nav>
 
-                {/* Desktop Login Button */}
-                <div className='hidden lg:flex items-center'>
-                    <button
-                        onClick={goToLogin}
-                        className='px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-full hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all duration-300 transform hover:scale-105'
-                    >
-                        Login
-                    </button>
+                    {/* --- Tombol Auth Desktop --- */}
+                    <div className="flex items-center pl-4 border-l border-gray-200">
+                        {authLoading ? (
+                            <div className="h-9 w-24 bg-gray-200 rounded-lg animate-pulse"></div>
+                        ) : user ? (
+                            <button
+                                onClick={handleLogout}
+                                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors rounded-lg"
+                            >
+                                <LogOut size={16} />
+                                Logout
+                            </button>
+                        ) : (
+                            <Link
+                                href="/login"
+                                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors rounded-lg"
+                            >
+                                <LogIn size={16} />
+                                Login
+                            </Link>
+                        )}
+                    </div>
                 </div>
 
                 {/* Mobile Menu Button */}
@@ -257,16 +308,29 @@ const Navbar = () => {
                                     </div>
                                 )
                             )}
-                            <div className="absolute bottom-0 p-6 w-full bg-white">
-                                <button
-                                    onClick={() => {
-                                        goToLogin();
-                                        toggleMenu();
-                                    }}
-                                    className='w-full px-8 py-3 text-lg font-semibold text-white bg-blue-600 rounded-full hover:bg-blue-700 transition-colors duration-300'
-                                >
-                                    Login
-                                </button>
+
+                            {/* --- Tombol Auth Mobile --- */}
+                            <div className="border-b border-gray-200 w-full text-center">
+                                {authLoading ? (
+                                    <div className="block py-4 text-lg font-medium text-gray-400">
+                                        Memuat...
+                                    </div>
+                                ) : user ? (
+                                    <button
+                                        onClick={handleLogout}
+                                        className="block w-full py-4 text-lg font-medium text-red-600 hover:bg-red-50 transition-colors"
+                                    >
+                                        Logout
+                                    </button>
+                                ) : (
+                                    <Link
+                                        href="/login"
+                                        onClick={toggleMenu}
+                                        className="block py-4 text-lg font-medium text-blue-600 hover:bg-blue-50 transition-colors"
+                                    >
+                                        Login
+                                    </Link>
+                                )}
                             </div>
                         </nav>
                     </motion.div>

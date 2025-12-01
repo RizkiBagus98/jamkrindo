@@ -1,97 +1,159 @@
-// controllers/galeriController.js
+const prisma = require("../lib/prisma");
+const fs = require("fs"); // <-- Import File System module
+const path = require("path"); // <-- Import Path module
 
-const Gallery = require("../models/Galeri");
+// Helper function untuk menghapus file
+const deleteFile = (imageUrl) => {
+  if (imageUrl) {
+    // Buat path absolut ke file
+    // Note: Sesuaikan '..' jika struktur folder Anda berbeda
+    const filePath = path.join(__dirname, '..', 'public', imageUrl); 
+    
+    // Hapus file
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        console.warn(`Gagal menghapus file lama: ${filePath}`, err);
+      } else {
+        console.log(`Berhasil menghapus file lama: ${filePath}`);
+      }
+    });
+  }
+};
 
-// Create a gallery item
 exports.createGallery = async (req, res) => {
-
     try {
-        const {title, description} = req.body;
-        // Middleware (multer) WAJIB digunakan agar req.file tidak undefined
+        const { title, description } = req.body;
+        
+        // Pastikan req.file ada sebelum mengakses .filename
         const imageUrl = req.file ? `/uploads/${req.file.filename}` : "";
 
-        // Pastikan title diisi
         if (!title) {
-            return res.status(400).json({message: "Judul tidak boleh kosong."});
+            return res.status(400).json({ message: "Judul tidak boleh kosong." });
         }
 
-        const newGalleryItem = new Gallery({
-            title,
-            description,
-            imageUrl, // Nama field 'imageUrl' dipertahankan agar sesuai dengan frontend
+        const savedItem = await prisma.gallery.create({
+            data: {
+                title,
+                description,
+                imageUrl
+            }
         });
 
-        const savedItem = await newGalleryItem.save();
         res.status(201).json(savedItem);
     } catch (err) {
-        // Logging error di sisi server untuk mempermudah debug
         console.error("Error saat menyimpan item galeri:", err);
-        res.status(500).json({message: "Terjadi kesalahan di server."});
+        res.status(500).json({ message: "Terjadi kesalahan di server." });
     }
 };
 
-// Update a gallery item
 exports.updateGallery = async (req, res) => {
     try {
-        const {title, description} = req.body;
-        const updateData = {title, description};
+        const id = Number(req.params.id);
+        
+        // Validasi ID
+        if (isNaN(id)) {
+            return res.status(400).json({ message: "ID tidak valid." });
+        }
 
-        // Jika ada file baru yang di-upload, perbarui imageUrl
+        const { title, description } = req.body;
+        const updateData = { title, description };
+
+        // 1. Cari item lama untuk mendapatkan path file lama
+        const oldItem = await prisma.gallery.findUnique({
+            where: { id },
+        });
+
+        if (!oldItem) {
+            return res.status(404).json({ message: "Item galeri tidak ditemukan." });
+        }
+
+        // 2. Jika ada file baru di-upload, tambahkan ke data & siapkan penghapusan file lama
         if (req.file) {
             updateData.imageUrl = `/uploads/${req.file.filename}`;
         }
 
-        const updatedItem = await Gallery.findByIdAndUpdate(
-            req.params.id,
-            updateData,
-            {new: true, runValidators: true} // Opsi untuk mengembalikan dokumen baru & menjalankan validator
-        );
+        // 3. Update database
+        const updatedItem = await prisma.gallery.update({
+            where: { id },
+            data: updateData
+        });
 
-        if (!updatedItem) {
-            return res.status(404).json({message: "Item galeri tidak ditemukan"});
+        // 4. Jika update berhasil DAN ada file baru, hapus file lama
+        if (req.file && oldItem.imageUrl) {
+            deleteFile(oldItem.imageUrl);
         }
+
         res.json(updatedItem);
     } catch (err) {
-        console.error(`Error saat memperbarui item galeri ${req.params.id}:`, err);
-        res.status(500).json({message: "Terjadi kesalahan di server."});
+        console.error("Error saat memperbarui item galeri:", err);
+        // Tangani error jika item tidak ditemukan saat update
+        if (err.code === 'P2025') {
+            return res.status(404).json({ message: "Item untuk diperbarui tidak ditemukan." });
+        }
+        res.status(500).json({ message: "Terjadi kesalahan di server." });
     }
 };
 
-
-// Fungsi lainnya (getAll, getById, delete) tetap sama
-// Get all gallery items
 exports.getAllGallery = async (req, res) => {
     try {
-        const gallery = await Gallery.find().sort({createdAt: -1});
+        const gallery = await prisma.gallery.findMany({
+            orderBy: { createdAt: "desc" }
+        });
         res.json(gallery);
     } catch (err) {
-        res.status(500).json({message: err.message});
+        res.status(500).json({ message: err.message });
     }
 };
 
-// Get a single gallery item
 exports.getGalleryById = async (req, res) => {
     try {
-        const galleryItem = await Gallery.findById(req.params.id);
-        if (!galleryItem) return res.status(404).json({message: "Item galeri tidak ditemukan"});
+        const id = Number(req.params.id);
+        
+        // Validasi ID
+        if (isNaN(id)) {
+            return res.status(400).json({ message: "ID tidak valid." });
+        }
+
+        const galleryItem = await prisma.gallery.findUnique({
+            where: { id }
+        });
+
+        if (!galleryItem) {
+            return res.status(404).json({ message: "Item galeri tidak ditemukan" });
+        }
+
         res.json(galleryItem);
     } catch (err) {
-        res.status(500).json({message: err.message});
+        res.status(500).json({ message: err.message });
     }
 };
 
-// Delete a gallery item
 exports.deleteGallery = async (req, res) => {
     try {
-        const deletedItem = await Gallery.findByIdAndDelete(req.params.id);
-        if (!deletedItem) return res.status(404).json({message: "Item galeri tidak ditemukan"});
+        const id = Number(req.params.id);
+        
+        // Validasi ID
+        if (isNaN(id)) {
+            return res.status(400).json({ message: "ID tidak valid." });
+        }
 
-        // Di sini Anda mungkin juga ingin menghapus file dari folder /uploads
-        // const fs = require('fs');
-        // fs.unlinkSync(`uploads/${deletedItem.imageUrl.split('/')[2]}`);
+        // 1. Hapus item dari DB dan dapatkan datanya
+        const deletedItem = await prisma.gallery.delete({
+            where: { id }
+        });
 
-        res.json({message: "Item galeri berhasil dihapus"});
+        // 2. Hapus file terkait dari server
+        if (deletedItem.imageUrl) {
+            deleteFile(deletedItem.imageUrl);
+        }
+
+        res.json({ message: "Item galeri berhasil dihapus" });
     } catch (err) {
-        res.status(500).json({message: err.message});
+        console.error("Error saat menghapus item galeri:", err);
+        // Tangani error jika item tidak ditemukan
+        if (err.code === 'P2025') {
+            return res.status(404).json({ message: "Item untuk dihapus tidak ditemukan." });
+        }
+        res.status(500).json({ message: err.message });
     }
 };

@@ -32,7 +32,7 @@ const DetailBerita = () => {
         <div className="max-w-screen mx-auto mt-32 px-10">
             <div className="rounded-xl overflow-hidden shadow-md">
                 <img
-                    src={`http://localhost:5000${berita.image}`}
+                    src={`http://localhost:5001${berita.image}`}
                     alt={berita.title}
                     className="w-full h-72 object-cover rounded-xl transition-all duration-300 hover:scale-105"
                 />

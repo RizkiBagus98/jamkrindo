@@ -1,13 +1,17 @@
 const express = require('express');
 const dotenv = require('dotenv');
-const mongoose = require('mongoose');
+const prisma = require('./src/lib/prisma');
 const authRoutes = require('./src/routes/auth');
 const beritaRoutes = require('./src/routes/berita');
-const pesanRoutes = require('./src/routes/pesan');
 const cors = require('cors');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const galeriRoutes = require('./src/routes/galeri');
+const karyawanRoutes = require('./src/routes/karyawan');
+const sambutanRoutes = require('./src/routes/sambutan');
+const visiMisiRoutes = require('./src/routes/visiMisi');
+const sejarahRoutes = require('./src/routes/sejarah');
+const userRoutes = require('./src/routes/user')
 
 dotenv.config();
 const app = express();
@@ -29,8 +33,12 @@ const corsOptions = {
         }
     },
     credentials: true,
+    methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS", // <-- Add this line
+    allowedHeaders: "Origin, X-Requested-With, Content-Type, Accept, Authorization", // <-- Add this line
 };
+
 app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 app.use(cookieParser());
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -39,10 +47,24 @@ app.use('/images', express.static(path.join(__dirname, 'public/images')));
 // --- Routes ---
 app.use('/api/auth', authRoutes);
 app.use('/api/berita', beritaRoutes);
-app.use('/api/pesan', pesanRoutes);
 app.use('/api/galeri', galeriRoutes);
+app.use('/api/karyawan', karyawanRoutes);
+app.use('/api/sambutan', sambutanRoutes);
+app.use('/api/visimisi', visiMisiRoutes);
+app.use('/api/sejarah', sejarahRoutes);
+app.use('/api/users', userRoutes);
 
 // Database Connect
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => app.listen(process.env.PORT || 5000, () => console.log('Server sedang berjalan ...')))
-    .catch((err) => console.error(err));
+async function startServer() {
+    try {
+        await prisma.$connect();
+        console.log("MySQL Connected");
+        app.listen(process.env.PORT || 5001, () =>
+            console.log("Server sedang berjalan ...")
+        );
+    } catch (error) {
+        console.error("Database connection failed:", error);
+    }
+}
+
+startServer();

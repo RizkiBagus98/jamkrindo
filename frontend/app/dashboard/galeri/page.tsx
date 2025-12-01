@@ -7,7 +7,7 @@ import {PencilIcon, TrashIcon, PhotoIcon} from '@heroicons/react/24/outline'; //
 
 // Definisikan tipe untuk item galeri
 interface GalleryItem {
-    _id: string;
+    id: number;
     title: string;
     description: string;
     imageUrl: string;
@@ -23,7 +23,7 @@ export default function GalleryDashboard() {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [image, setImage] = useState<File | null>(null);
-    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editingId, setEditingId] = useState<number | null>(null);
 
     // --- Fetch Data ---
     useEffect(() => {
@@ -49,7 +49,7 @@ export default function GalleryDashboard() {
     };
 
     const openModalForEdit = (item: GalleryItem) => {
-        setEditingId(item._id);
+        setEditingId(item.id);
         setTitle(item.title);
         setDescription(item.description);
         setIsModalOpen(true);
@@ -91,7 +91,7 @@ export default function GalleryDashboard() {
         }
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (id: number) => {
         if (window.confirm("Apakah Anda yakin ingin menghapus item ini?")) {
             try {
                 await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/galeri/${id}`);
@@ -133,10 +133,10 @@ export default function GalleryDashboard() {
                                 <td colSpan={5} className="text-center py-10 text-gray-500">Memuat data...</td>
                             </tr>
                         ) : gallery.map((item) => (
-                            <tr key={item._id} className="border-b border-gray-200 hover:bg-gray-50">
+                            <tr key={item.id} className="border-b border-gray-200 hover:bg-gray-50">
                                 <td className="p-3">
                                     <Image
-                                        src={`http://localhost:5000${item.imageUrl}`}
+                                        src={`http://localhost:5001${item.imageUrl}`}
                                         alt={item.title}
                                         width={96} // w-24
                                         height={64} // h-16
@@ -154,7 +154,7 @@ export default function GalleryDashboard() {
                                                 title="Edit">
                                             <PencilIcon className="w-5 h-5"/>
                                         </button>
-                                        <button onClick={() => handleDelete(item._id)}
+                                        <button onClick={() => handleDelete(item.id)}
                                                 className="p-2 rounded-full hover:bg-red-100 text-red-600"
                                                 title="Hapus">
                                             <TrashIcon className="w-5 h-5"/>

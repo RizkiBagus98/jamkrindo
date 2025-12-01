@@ -1,6 +1,35 @@
 'use client';
 
-const VisiMisiPage = () => {
+// Tambahkan hook
+import { useState, useEffect, FC } from 'react';
+
+// Tipe data yang kita terima dari GET
+interface VisiMisiData {
+    visi: string;
+    misi: string[];
+}
+
+const VisiMisiPage: FC = () => {
+    // State untuk menyimpan data
+    const [data, setData] = useState<VisiMisiData>({
+        visi: 'Memuat visi...',
+        misi: []
+    });
+
+    // Fetch data saat komponen dimuat
+    useEffect(() => {
+        fetch('http://localhost:5001/api/visimisi')
+            .then((res) => res.json())
+            .then((data: VisiMisiData) => {
+                setData(data);
+            })
+            .catch(err => {
+                console.error("Gagal fetch data:", err);
+                setData({ visi: 'Gagal memuat visi.', misi: ['Gagal memuat misi.'] });
+            });
+    }, []);
+
+
     return (
         <div className="max-w-screen-lg mx-auto mt-32 px-6">
             <div className="text-center mb-12">
@@ -13,9 +42,9 @@ const VisiMisiPage = () => {
             <section className="mb-16">
                 <h2 className="text-2xl font-semibold text-blue-800 mb-4">Visi</h2>
                 <div className="bg-blue-50 p-6 rounded-xl shadow-sm border-l-4 border-blue-600">
+                    {/* Tampilkan data 'visi' dari state */}
                     <p className="text-gray-700 text-lg italic">
-                        “Menjadi perusahaan penjaminan terdepan yang mendukung pertumbuhan ekonomi nasional melalui
-                        pemberdayaan UMKM.”
+                        “{data.visi}”
                     </p>
                 </div>
             </section>
@@ -24,13 +53,8 @@ const VisiMisiPage = () => {
             <section>
                 <h2 className="text-2xl font-semibold text-blue-800 mb-4">Misi</h2>
                 <ul className="space-y-6">
-                    {[
-                        "Menyediakan layanan penjaminan yang profesional, terpercaya, dan berdaya saing tinggi.",
-                        "Mendukung penguatan kapasitas UMKM agar mampu tumbuh dan berkelanjutan.",
-                        "Menjalin kemitraan strategis dengan lembaga keuangan, pemerintah, dan swasta.",
-                        "Meningkatkan nilai perusahaan bagi pemegang saham, mitra, dan masyarakat.",
-                        "Mengembangkan sumber daya manusia dan teknologi untuk peningkatan layanan."
-                    ].map((item, index) => (
+                    {/* Ganti array statis dengan map dari data.misi */}
+                    {data.misi.map((item, index) => (
                         <li key={index}
                             className="flex items-start gap-4 bg-white p-4 rounded-lg shadow hover:shadow-md transition">
                             <div className="text-blue-600 font-bold text-xl">{index + 1}.</div>

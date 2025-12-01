@@ -32,6 +32,7 @@ const Register = () => {
             // Menggunakan fetch agar konsisten dengan komponen Login
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -98,6 +99,7 @@ const Register = () => {
                 />
 
                 <div className='flex flex-col'>
+                    <p>Sudah Punya akun? <span><a href="/login" className='text-blue-500'>Login</a></span></p>
                     <button
                         type="submit"
                         disabled={isLoading}
@@ -109,7 +111,7 @@ const Register = () => {
             </form>
 
             {/* Kolom Kanan: Gambar Ilustrasi */}
-            <Image src={'/images/jamkrindo-3.jpg'} className='rounded-xl' alt='images' width={600} height={500}></Image>
+            <Image src={'/images/jamkrindo-3.jpg'} className='rounded-xl object-cover' alt='images' width={600} height={500}></Image>
         </div>
     );
 };

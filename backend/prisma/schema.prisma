@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id        Int     @id @default(autoincrement())
+  name      String  @unique
+  email     String  @unique
+  password  String
+  role      Role    @default(USER)
+  createdAt DateTime @default(now())
+}
+
+model Berita {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  createdAt   DateTime @default(now())
+  image       String?
+}
+
+model Pesan {
+  id        Int     @id @default(autoincrement())
+  nama      String
+  email     String
+  pesan     String
+  createdAt DateTime @default(now())
+}
+
+model Gallery {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+}
+
+model Employee {
+  id        Int      @id @default(autoincrement())
+  name      String
+  position  String?
+  department String?
+  employeeId String?
+  email     String?  @unique
+  phone     String?
+  location  String?
+  joinDate  DateTime?
+  education String?
+  experience String?
+  avatar    String?
+  status    String?
+  createdAt DateTime @default(now())
+  achievements EmployeeAchievement[]
+}
+
+
+model EmployeeAchievement {
+  id          Int      @id @default(autoincrement())
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  employeeId  Int
+  achievement String
+}
+
+
+
+model sambutanContent {
+  id            Int      @id @default(autoincrement())
+  content_key   String   @unique
+  content_title String?
+  content_body  String?  @db.Text
+  updated_at    DateTime @updatedAt
+  @@map("site_content")
+}
+

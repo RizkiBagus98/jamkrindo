@@ -24,20 +24,12 @@ const storage = multer.diskStorage({
 
 const upload = multer({storage});
 
-router.get('/public', getPublicBerita);
 
-// Route untuk menambahkan produk
 router.post('/', authMiddleware, upload.single('image'), createBerita);
-
-// Route untuk mendapatkan semua produk
-router.get('/', authMiddleware, getAllBerita);
-
-// Route untuk mengedit produk
+router.get('/public', getPublicBerita);
+router.get('/', getAllBerita);
 router.put('/:id', authMiddleware, upload.single('image'), updateBerita);
-// Tambahkan controller jika belum ada
 router.get('/detail/:id', getBeritaById); // tanpa authMiddleware
-
-// Route untuk menghapus produk
 router.delete('/:id', authMiddleware, deleteBerita);
 
 module.exports = router;

@@ -365,40 +365,6 @@ const Page = () => {
                 </div>
             </section>
 
-            {/* CTA Section */}
-            <section className="py-16 bg-teal-600">
-                <div className="max-w-4xl mx-auto px-4 text-center">
-                    <h2 className="text-3xl font-bold text-white mb-4">
-                        Butuh Surety Bond untuk Proyek Anda?
-                    </h2>
-                    <p className="text-teal-100 text-lg mb-8">
-                        Konsultasikan kebutuhan jaminan proyek dengan tim underwriter ahli kami
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <button className="bg-yellow-400 hover:bg-yellow-500 text-teal-900 px-8 py-3 rounded-lg font-semibold transition-colors">
-                            Konsultasi Gratis
-                        </button>
-                        <button className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-teal-600 px-8 py-3 rounded-lg font-semibold transition-colors">
-                            Download Proposal
-                        </button>
-                    </div>
-
-                    <div className="mt-8 grid md:grid-cols-3 gap-4 text-teal-100 text-sm">
-                        <div>
-                            <strong>📞 Hotline Surety:</strong><br />
-                            1500-BOND (2663)
-                        </div>
-                        <div>
-                            <strong>📧 Email:</strong><br />
-                            suretybon@jamkrindo.co.id
-                        </div>
-                        <div>
-                            <strong>🏢 Corporate Center:</strong><br />
-                            Jakarta & 33 Kantor Cabang
-                        </div>
-                    </div>
-                </div>
-            </section>
         </div>
     );
 };

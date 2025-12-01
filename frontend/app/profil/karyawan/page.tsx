@@ -1,113 +1,71 @@
 "use client"
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, MapPin, Calendar, Briefcase, GraduationCap, Award, Search, Filter, Grid, List, ChevronDown } from 'lucide-react';
+
+interface Employee {
+  _id: string;
+  id: number;
+  name: string;
+  position: string;
+  department: string;
+  email: string;
+  phone: string;
+  location: string;
+  joinDate?: string;
+  education?: string;
+  experience?: string;
+  avatar?: string;
+  status: string;
+  achievements: string[];
+  __v?: number;
+}
 
 const Page = () => {
     const [viewMode, setViewMode] = useState('grid');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedDepartment, setSelectedDepartment] = useState('all');
-    const [selectedEmployee, setSelectedEmployee] = useState(null);
+    const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const employees = [
-        {
-            id: 1,
-            name: "Budi Santoso",
-            position: "Senior Software Engineer",
-            department: "IT Development",
-            employeeId: "JKR-2024-001",
-            email: "budi.santoso@jamkrindo.co.id",
-            phone: "+62 812-3456-7890",
-            location: "Jakarta, Indonesia",
-            joinDate: "15 Januari 2020",
-            education: "S1 Teknik Informatika - Universitas Indonesia",
-            experience: "8 tahun",
-            avatar: "BS",
-            status: "active",
-            achievements: ["Employee of the Year 2023", "Best Innovation Award 2022"]
-        },
-        {
-            id: 2,
-            name: "Sari Dewi",
-            position: "HR Manager",
-            department: "Human Resources",
-            employeeId: "JKR-2024-002",
-            email: "sari.dewi@jamkrindo.co.id",
-            phone: "+62 813-9876-5432",
-            location: "Jakarta, Indonesia",
-            joinDate: "10 Maret 2019",
-            education: "S1 Psikologi - Universitas Gadjah Mada",
-            experience: "10 tahun",
-            avatar: "SD",
-            status: "active",
-            achievements: ["Best HR Practice 2023", "Team Building Excellence 2022"]
-        },
-        {
-            id: 3,
-            name: "Ahmad Rizki",
-            position: "Marketing Specialist",
-            department: "Marketing",
-            employeeId: "JKR-2024-003",
-            email: "ahmad.rizki@jamkrindo.co.id",
-            phone: "+62 814-5555-1234",
-            location: "Surabaya, Indonesia",
-            joinDate: "5 Juli 2021",
-            education: "S1 Manajemen Pemasaran - ITS",
-            experience: "5 tahun",
-            avatar: "AR",
-            status: "active",
-            achievements: ["Best Campaign 2023", "Digital Marketing Excellence 2022"]
-        },
-        {
-            id: 4,
-            name: "Maya Putri",
-            position: "Financial Analyst",
-            department: "Finance",
-            employeeId: "JKR-2024-004",
-            email: "maya.putri@jamkrindo.co.id",
-            phone: "+62 815-7777-9999",
-            location: "Jakarta, Indonesia",
-            joinDate: "12 September 2022",
-            education: "S1 Akuntansi - Universitas Brawijaya",
-            experience: "4 tahun",
-            avatar: "MP",
-            status: "active",
-            achievements: ["Financial Excellence 2023"]
-        },
-        {
-            id: 5,
-            name: "Rendra Pratama",
-            position: "Project Manager",
-            department: "IT Development",
-            employeeId: "JKR-2024-005",
-            email: "rendra.pratama@jamkrindo.co.id",
-            phone: "+62 816-3333-4444",
-            location: "Bandung, Indonesia",
-            joinDate: "20 Februari 2018",
-            education: "S1 Sistem Informasi - ITB",
-            experience: "12 tahun",
-            avatar: "RP",
-            status: "active",
-            achievements: ["Project Excellence 2023", "Leadership Award 2021", "Innovation Award 2020"]
-        },
-        {
-            id: 6,
-            name: "Lisa Maharani",
-            position: "UX/UI Designer",
-            department: "Design",
-            employeeId: "JKR-2024-006",
-            email: "lisa.maharani@jamkrindo.co.id",
-            phone: "+62 817-8888-2222",
-            location: "Jakarta, Indonesia",
-            joinDate: "8 November 2021",
-            education: "S1 Desain Komunikasi Visual - Binus",
-            experience: "6 tahun",
-            avatar: "LM",
-            status: "active",
-            achievements: ["Design Excellence 2023", "User Experience Award 2022"]
-        }
-    ];
+    // Fetch data dari API
+    useEffect(() => {
+        const fetchEmployees = async () => {
+            try {
+                setLoading(true);
+                const response = await fetch('http://localhost:5001/api/karyawan');
+                
+                if (!response.ok) {
+                    throw new Error('Gagal mengambil data karyawan');
+                }
+                
+                const data: Employee[] = await response.json();
+                setEmployees(data);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
+                console.error('Error fetching employees:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    const departments = ['all', 'IT Development', 'Human Resources', 'Marketing', 'Finance', 'Design'];
+        fetchEmployees();
+    }, []);
+
+    // Generate avatar dari inisial nama
+    const generateAvatar = (name: string) => {
+        return name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2);
+    };
+
+    // Format join date default jika tidak ada
+    const formatJoinDate = (joinDate?: string) => {
+        if (!joinDate) return 'Tanggal bergabung tidak tersedia';
+        return joinDate;
+    };
+
+    // Get departments dari data yang ada
+    const departments = ['all', ...Array.from(new Set(employees.map(emp => emp.department)))].filter(Boolean);
 
     const filteredEmployees = employees.filter(employee => {
         const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -117,7 +75,7 @@ const Page = () => {
         return matchesSearch && matchesDepartment;
     });
 
-    const getAvatarColor = (name) => {
+    const getAvatarColor = (name: string) => {
         const colors = [
             'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-red-500',
             'bg-yellow-500', 'bg-indigo-500', 'bg-pink-500', 'bg-teal-500'
@@ -126,7 +84,7 @@ const Page = () => {
         return colors[index];
     };
 
-    const EmployeeCard = ({ employee }) => (
+    const EmployeeCard = ({ employee }: { employee: Employee }) => (
         <div
             className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
             onClick={() => setSelectedEmployee(employee)}
@@ -134,7 +92,7 @@ const Page = () => {
             <div className="p-6">
                 <div className="flex items-center space-x-4 mb-4">
                     <div className={`w-16 h-16 ${getAvatarColor(employee.name)} rounded-full flex items-center justify-center text-white font-bold text-lg`}>
-                        {employee.avatar}
+                        {employee.avatar || generateAvatar(employee.name)}
                     </div>
                     <div className="flex-1">
                         <h3 className="text-xl font-bold text-gray-800">{employee.name}</h3>
@@ -142,8 +100,8 @@ const Page = () => {
                         <p className="text-gray-500 text-sm">{employee.department}</p>
                     </div>
                     <div className="text-right">
-                        <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                            Active
+                        <span className={`inline-block ${employee.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} text-xs px-2 py-1 rounded-full`}>
+                            {employee.status === 'active' ? 'Active' : 'Inactive'}
                         </span>
                     </div>
                 </div>
@@ -155,20 +113,20 @@ const Page = () => {
                     </div>
                     <div className="flex items-center">
                         <MapPin className="w-4 h-4 mr-2" />
-                        {employee.location}
+                        {employee.location || 'Lokasi tidak tersedia'}
                     </div>
                     <div className="flex items-center">
                         <Calendar className="w-4 h-4 mr-2" />
-                        Bergabung: {employee.joinDate}
+                        Bergabung: {formatJoinDate(employee.joinDate)}
                     </div>
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-gray-100">
                     <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">Pengalaman: {employee.experience}</span>
+                        <span className="text-gray-500">Pengalaman: {employee.experience || 'Tidak tersedia'}</span>
                         <div className="flex items-center text-yellow-600">
                             <Award className="w-4 h-4 mr-1" />
-                            {employee.achievements.length} Award{employee.achievements.length > 1 ? 's' : ''}
+                            {(employee.achievements || []).length} Award{(employee.achievements || []).length > 1 ? 's' : ''}
                         </div>
                     </div>
                 </div>
@@ -176,7 +134,7 @@ const Page = () => {
         </div>
     );
 
-    const EmployeeListItem = ({ employee }) => (
+    const EmployeeListItem = ({ employee }: { employee: Employee }) => (
         <div
             className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
             onClick={() => setSelectedEmployee(employee)}
@@ -184,7 +142,7 @@ const Page = () => {
             <div className="p-6">
                 <div className="flex items-center space-x-6">
                     <div className={`w-12 h-12 ${getAvatarColor(employee.name)} rounded-full flex items-center justify-center text-white font-bold`}>
-                        {employee.avatar}
+                        {employee.avatar || generateAvatar(employee.name)}
                     </div>
 
                     <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -195,21 +153,21 @@ const Page = () => {
 
                         <div>
                             <p className="text-gray-600 text-sm">{employee.department}</p>
-                            <p className="text-gray-500 text-xs">{employee.employeeId}</p>
+                            <p className="text-gray-500 text-xs">ID: {employee.id}</p>
                         </div>
 
                         <div>
-                            <p className="text-gray-600 text-sm">{employee.location}</p>
-                            <p className="text-gray-500 text-xs">Since {employee.joinDate}</p>
+                            <p className="text-gray-600 text-sm">{employee.location || 'Lokasi tidak tersedia'}</p>
+                            <p className="text-gray-500 text-xs">Since {formatJoinDate(employee.joinDate)}</p>
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                                Active
+                            <span className={`${employee.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} text-xs px-2 py-1 rounded-full`}>
+                                {employee.status === 'active' ? 'Active' : 'Inactive'}
                             </span>
                             <div className="flex items-center text-yellow-600 text-sm">
                                 <Award className="w-4 h-4 mr-1" />
-                                {employee.achievements.length}
+                                {(employee.achievements || []).length}
                             </div>
                         </div>
                     </div>
@@ -218,17 +176,17 @@ const Page = () => {
         </div>
     );
 
-    const EmployeeDetailModal = ({ employee, onClose }) => {
+    const EmployeeDetailModal = ({ employee, onClose }: { employee: Employee | null, onClose: () => void }) => {
         if (!employee) return null;
 
         return (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                     <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-6 text-white">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-6">
                                 <div className={`w-20 h-20 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-2xl backdrop-blur-sm`}>
-                                    {employee.avatar}
+                                    {employee.avatar || generateAvatar(employee.name)}
                                 </div>
                                 <div>
                                     <h2 className="text-3xl font-bold">{employee.name}</h2>
@@ -263,7 +221,7 @@ const Page = () => {
                                     </div>
                                     <div className="flex items-center p-3 bg-gray-50 rounded-lg">
                                         <MapPin className="w-4 h-4 text-red-600 mr-3" />
-                                        <span className="text-gray-800">{employee.location}</span>
+                                        <span className="text-gray-800">{employee.location || 'Lokasi tidak tersedia'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -278,21 +236,21 @@ const Page = () => {
                                         <Calendar className="w-4 h-4 text-indigo-600 mr-3" />
                                         <div>
                                             <p className="text-sm text-gray-500">Bergabung</p>
-                                            <p className="font-semibold text-gray-800">{employee.joinDate}</p>
+                                            <p className="font-semibold text-gray-800">{formatJoinDate(employee.joinDate)}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center p-3 bg-indigo-50 rounded-lg">
                                         <GraduationCap className="w-4 h-4 text-purple-600 mr-3" />
                                         <div>
                                             <p className="text-sm text-gray-500">Pendidikan</p>
-                                            <p className="font-semibold text-gray-800">{employee.education}</p>
+                                            <p className="font-semibold text-gray-800">{employee.education || 'Tidak tersedia'}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center p-3 bg-indigo-50 rounded-lg">
                                         <Award className="w-4 h-4 text-amber-600 mr-3" />
                                         <div>
                                             <p className="text-sm text-gray-500">Pengalaman</p>
-                                            <p className="font-semibold text-gray-800">{employee.experience}</p>
+                                            <p className="font-semibold text-gray-800">{employee.experience || 'Tidak tersedia'}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -304,17 +262,24 @@ const Page = () => {
                                 <Award className="w-5 h-5 mr-2 text-yellow-600" />
                                 Pencapaian & Penghargaan
                             </h3>
-                            <div className="grid md:grid-cols-2 gap-4">
-                                {employee.achievements.map((achievement, index) => (
-                                    <div key={index} className="bg-gradient-to-br from-yellow-50 to-amber-50 p-4 rounded-xl border-l-4 border-yellow-400">
-                                        <div className="flex items-center mb-1">
-                                            <Award className="w-4 h-4 text-yellow-600 mr-2" />
-                                            <span className="text-xs text-gray-500">#{index + 1}</span>
+                            {(employee.achievements || []).length > 0 ? (
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {employee.achievements.map((achievement, index) => (
+                                        <div key={index} className="bg-gradient-to-br from-yellow-50 to-amber-50 p-4 rounded-xl border-l-4 border-yellow-400">
+                                            <div className="flex items-center mb-1">
+                                                <Award className="w-4 h-4 text-yellow-600 mr-2" />
+                                                <span className="text-xs text-gray-500">#{index + 1}</span>
+                                            </div>
+                                            <p className="font-semibold text-gray-800">{achievement}</p>
                                         </div>
-                                        <p className="font-semibold text-gray-800">{achievement}</p>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="bg-gray-50 p-6 rounded-xl text-center">
+                                    <Award className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                                    <p className="text-gray-600">Belum ada pencapaian</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -322,21 +287,47 @@ const Page = () => {
         );
     };
 
+    if (loading) {
+        return (
+            <div className="min-h-screen pt-[7vw] bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-6 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-4 text-gray-600">Memuat data karyawan...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen pt-[7vw] bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-6 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="bg-red-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                        <User className="w-8 h-8 text-red-600" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">Error</h3>
+                    <p className="text-gray-600 mb-4">{error}</p>
+                    <button 
+                        onClick={() => window.location.reload()}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                        Coba Lagi
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen pt-[7vw] bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-6">
             {/* Header */}
             <div className="max-w-7xl mx-auto">
-                <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
+                <div className="bg-white rounded-2xl shadow-md p-8 mb-8">
                     <div className="flex items-center justify-between mb-6">
                         <div>
                             <h1 className="text-4xl font-bold text-gray-800">Profil Karyawan</h1>
                             <p className="text-gray-600 mt-2">PT Jamkrindo - {filteredEmployees.length} karyawan aktif</p>
                         </div>
-                        <img
-                            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='50' viewBox='0 0 150 50'%3E%3Ctext x='10' y='30' font-family='Arial, sans-serif' font-size='24' font-weight='bold' fill='%232563eb'%3EPT JAMKRINDO%3C/text%3E%3C/svg%3E"
-                            alt="PT Jamkrindo Logo"
-                            className="h-12"
-                        />
                     </div>
 
                     {/* Filters and Search */}
@@ -390,8 +381,8 @@ const Page = () => {
                 <div className={viewMode === 'grid' ? 'grid md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
                     {filteredEmployees.map(employee => (
                         viewMode === 'grid' ?
-                            <EmployeeCard key={employee.id} employee={employee} /> :
-                            <EmployeeListItem key={employee.id} employee={employee} />
+                            <EmployeeCard key={employee._id || employee.id} employee={employee} /> :
+                            <EmployeeListItem key={employee._id || employee.id} employee={employee} />
                     ))}
                 </div>
 

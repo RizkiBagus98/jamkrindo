@@ -1,31 +1,40 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const jwt = require("jsonwebtoken");
+const prisma = require("../lib/prisma");
 
 const authMiddleware = async (req, res, next) => {
-    // 1. Ambil token dari cookie, BUKAN dari header
-    const token = req.cookies['session-token']; // Nama cookie harus cocok
+    const token = req.cookies["session-token"];
 
-    // 2. Periksa apakah cookie berisi token
     if (!token) {
-        return res.status(401).json({message: 'Akses ditolak. Silakan login kembali.'});
+        return res.status(401).json({
+            message: "Akses ditolak. Silakan login kembali."
+        });
     }
 
     try {
-        // 3. Verifikasi token yang didapat dari cookie
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        // Cari pengguna berdasarkan ID dari token
-        const user = await User.findById(decoded.id).select('-password'); // -password agar tidak ikut terkirim
+        const user = await prisma.user.findUnique({
+            where: { id: decoded.id },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true
+            }
+        });
+
         if (!user) {
-            return res.status(401).json({message: 'Pengguna tidak ditemukan.'});
+            return res.status(401).json({
+                message: "Pengguna tidak ditemukan."
+            });
         }
 
-        // 4. Simpan data pengguna ke request dan lanjutkan
         req.user = user;
         next();
-    } catch (err) {
-        // Jika token tidak valid (misal: sudah expired)
-        return res.status(401).json({message: 'Sesi tidak valid atau telah berakhir. Silakan login kembali.'});
+    } catch (error) {
+        return res.status(401).json({
+            message: "Sesi tidak valid atau telah berakhir. Silakan login kembali."
+        });
     }
 };
 
